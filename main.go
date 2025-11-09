@@ -7,6 +7,7 @@ import (
 	"log" //errors
 	"os"  //opening the file
 	"time"
+	"aaron.com/cliquiz/apple"
 )
 
 func openFile() [][]string {
@@ -26,11 +27,10 @@ func openFile() [][]string {
 	//Each line is its own element where each comma separated value is an index
 
 	if err != nil { //fails when there is no comma on line
-		log.Fatal("Error reading file contents")
+		log.Fatal("Error reading file contents. Make sure the file is formatted correctly is CSV.")
 	}
 
 	return records
-
 }
 
 func getQandA(file_data [][]string) ([]string, []string) { //creating separate questions an answers array from overall file structure
@@ -42,7 +42,6 @@ func getQandA(file_data [][]string) ([]string, []string) { //creating separate q
 		questions = append(questions, file_data[i][0])
 
 		answers = append(answers, file_data[i][1])
-
 	}
 
 	return questions, answers
@@ -54,8 +53,8 @@ func takeQuiz(questions []string, answers []string, timer *time.Timer) int {
 	var numCorrect int
 
 	for i := 0; i < len(questions); i++ {
-		fmt.Printf("Problem #%d: %s = ", i + 1, questions[i])
 
+		fmt.Printf("Problem #%d: %s = ", i+1, questions[i]) 
 		answerCh := make(chan string)
 
 		go func() {
@@ -88,23 +87,39 @@ func showResults(numberCorrect int, numberQuestions int) {
 	}
 }
 
+func startQuiz() bool {
+	var begin string
+	for {
+		fmt.Scanf("%s", &begin)
+		if begin == "start" {
+			return true
+		} else {
+			fmt.Println("Enter 'start' to begin.")
+		}
+	}
+}
+
 func main() {
 
-	var begin string
+	apple.Apple("Sour")
+	
+	var timeLimit int
+
 	file_data := openFile()
 
-	timeLimit := flag.Int("limit", 5, "the time limit for the quiz in seconds")
+	flag.IntVar(&timeLimit, "timelimit", 5, "the time limit for the quiz in seconds")
+	flag.Parse()
 
-	fmt.Printf("You have %d seconds to finish the quiz. Type 'start' and press enter to begin the quiz: ", *timeLimit)
-	fmt.Scanf("%s", &begin)
+	fmt.Printf("You have %d seconds to finish the quiz. Type 'start' and press enter to begin the quiz: ", timeLimit)
 
-	if begin == "start" {
-		questions, answers := getQandA(file_data)
+	questions, answers := getQandA(file_data)
 
-		timer := time.NewTimer(time.Duration(*timeLimit) * time.Second)
+	start := startQuiz()
 
+	if start {
+		timer := time.NewTimer(time.Duration(timeLimit) * time.Second)
 		num_correct := takeQuiz(questions, answers, timer)
-
 		showResults(num_correct, len(answers))
 	}
 }
+
